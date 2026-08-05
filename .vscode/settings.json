@@ -1,0 +1,8 @@
+{
+  "python.defaultInterpreterPath": "/usr/bin/python3",
+  "remote.SSH.remotePlatform": {
+    "brickpi": "linux"
+  },
+  "python.testing.pytestEnabled": true,
+  "python.testing.pytestArgs": ["tests"]
+}

@@ -1,0 +1,21 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Run on robot (SSH)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "kuky.scripts.run_robot",
+      "args": ["--dry-run"],
+      "justMyCode": true
+    },
+    {
+      "name": "Run locally (dry-run + display)",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "kuky.scripts.run_robot",
+      "args": ["--dry-run", "--show"],
+      "justMyCode": true
+    }
+  ]
+}

@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "kuky"
+version = "0.1.0"
+description = "Computer vision navigation system for BrickPi robot"
+requires-python = ">=3.10"
+dependencies = [
+    "opencv-python>=4.9",
+    "numpy>=1.26",
+    "ultralytics>=8.2",   # YOLOv8
+    "brickpi3>=2.0",
+    "picamera2>=0.3; platform_machine=='aarch64'",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-mock>=3.12",
+]
+
+[project.scripts]
+kuky = "kuky.scripts.run_robot:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["kuky*"]
