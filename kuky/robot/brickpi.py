@@ -13,8 +13,14 @@ except ImportError:
 PORT_LEFT = "PORT_A"
 PORT_RIGHT = "PORT_D"
 
+# NXT Ultrasonic Sensor port
+PORT_ULTRASONIC = "PORT_1"
+
 # Degrees per second at full speed (tune to your wheels)
 MAX_DPS = 300
+
+# Stop motors when ultrasonic reads closer than this (cm)
+STOP_DISTANCE_CM = 15.0
 
 
 class BrickPiRobot:
@@ -33,6 +39,12 @@ class BrickPiRobot:
             self._right = getattr(self._bp, PORT_RIGHT)
             self._bp.set_motor_limits(self._left, dps=MAX_DPS)
             self._bp.set_motor_limits(self._right, dps=MAX_DPS)
+            # Configure NXT ultrasonic sensor
+            self._us_port = getattr(self._bp, PORT_ULTRASONIC)
+            self._bp.set_sensor_type(
+                self._us_port,
+                self._bp.SENSOR_TYPE.NXT_ULTRASONIC,
+            )
         else:
             print("[BrickPiRobot] dry-run mode — no hardware commands sent")
 
@@ -53,6 +65,15 @@ class BrickPiRobot:
 
     def stop(self) -> None:
         self._set_motors(0.0, 0.0)
+
+    def read_distance_cm(self) -> float:
+        """Return ultrasonic distance in cm, or 999 on dry-run / read error."""
+        if self._dry_run:
+            return 999.0
+        try:
+            return float(self._bp.get_sensor(self._us_port))
+        except Exception:
+            return 999.0
 
     def _set_motors(self, left: float, right: float) -> None:
         left_dps = int(left * MAX_DPS)

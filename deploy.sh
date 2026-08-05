@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
-# deploy.sh — syncs the project to the BrickPi robot over SSH
+# deploy.sh — syncs the project to kuky over SSH
 #
 # Usage:
-#   ./deploy.sh <robot_host>          # e.g. ./deploy.sh pi@brickpi.local
-#   ./deploy.sh pi@192.168.1.42
+#   ./deploy.sh <robot_host>          # e.g. ./deploy.sh pi@kuky.local
+#   ./deploy.sh pi@192.168.1.232
+#   ./deploy.sh pi@kuky               # using the SSH alias
 #
 # First run: also installs dependencies on the robot.
 
