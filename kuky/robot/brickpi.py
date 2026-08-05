@@ -1,5 +1,7 @@
 """BrickPi3 motor control interface."""
 
+from typing import Self
+
 from kuky.navigation.navigator import Action, NavDecision
 
 try:
@@ -84,7 +86,7 @@ class BrickPiRobot:
         self._bp.set_motor_dps(self._left, left_dps)
         self._bp.set_motor_dps(self._right, right_dps)
 
-    def __enter__(self) -> "BrickPiRobot":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *_) -> None:

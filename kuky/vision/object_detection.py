@@ -1,8 +1,6 @@
 """YOLOv8-based object detection + instance segmentation for living room awareness."""
 
 from dataclasses import dataclass, field
-from pathlib import Path
-from typing import Optional
 
 import cv2
 import numpy as np
@@ -17,7 +15,7 @@ class Detection:
     x2: int
     y2: int
     # Binary mask resized to the original frame dimensions (H×W bool), or None
-    mask: Optional[np.ndarray] = field(default=None, repr=False)
+    mask: np.ndarray | None = field(default=None, repr=False)
 
     @property
     def centre_x(self) -> int:
@@ -47,7 +45,7 @@ class ObjectDetector:
         self,
         model_path: str = "yolov8n-seg.pt",
         confidence_threshold: float = 0.45,
-        relevant_labels: Optional[set[str]] = None,
+        relevant_labels: set[str] | None = None,
         device: str = "cpu",
     ) -> None:
         # Lazy import so the module loads on non-Pi machines without ultralytics
@@ -61,22 +59,25 @@ class ObjectDetector:
     def detect(self, frame: np.ndarray) -> list[Detection]:
         """Return detections (with masks) filtered to relevant living room objects."""
         h, w = frame.shape[:2]
-        results = self._model(frame, conf=self._conf, device=self._device, verbose=False)
+        raw = self._model(frame, conf=self._conf, device=self._device, verbose=False)
         detections: list[Detection] = []
 
-        for result in results:
+        for result in raw:
+            from ultralytics.engine.results import Results  # type: ignore
+            if not isinstance(result, Results):
+                continue
             masks_data = result.masks  # may be None for det-only models
-            for idx, box in enumerate(result.boxes):
+            for idx, box in enumerate(result.boxes or []):
                 label = result.names[int(box.cls)]
                 if label not in self._relevant:
                     continue
                 x1, y1, x2, y2 = (int(v) for v in box.xyxy[0])
 
-                mask: Optional[np.ndarray] = None
+                mask: np.ndarray | None = None
                 if masks_data is not None and idx < len(masks_data):
                     # masks_data.data is (N, H, W) float tensor on [0,1]
-                    raw = masks_data.data[idx].cpu().numpy()
-                    mask = cv2.resize(raw, (w, h)) > 0.5
+                    mask_arr = np.asarray(masks_data.data[idx].cpu(), dtype=np.float32)  # type: ignore[union-attr]
+                    mask = cv2.resize(mask_arr, (w, h)) > 0.5
 
                 detections.append(Detection(
                     label=label,

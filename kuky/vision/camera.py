@@ -1,5 +1,7 @@
 """USB webcam interface."""
 
+from typing import Self
+
 import cv2
 import numpy as np
 
@@ -26,7 +28,7 @@ class Camera:
     def release(self) -> None:
         self._cap.release()
 
-    def __enter__(self) -> "Camera":
+    def __enter__(self) -> Self:
         return self
 
     def __exit__(self, *_) -> None:
