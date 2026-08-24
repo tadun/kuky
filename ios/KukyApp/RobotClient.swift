@@ -12,6 +12,7 @@ final class RobotClient: NSObject {
     var mode: String = "auto"          // "manual" | "auto"
     var distanceCM: Double = 999
     var lastAction: String = "STOP"
+    var speed: Double = 1.0
 
     // MARK: - Config
 
@@ -23,6 +24,7 @@ final class RobotClient: NSObject {
     private var streamSession: URLSession!
     private var streamTask: URLSessionDataTask?
     private var wsTask: URLSessionWebSocketTask?
+    private var wsReconnectTask: Task<Void, Never>?
 
     // Rolling byte buffer for MJPEG frame extraction
     private var buffer = Data()
@@ -46,6 +48,7 @@ final class RobotClient: NSObject {
     }
 
     func disconnect() {
+        wsReconnectTask?.cancel()
         streamTask?.cancel()
         wsTask?.cancel(with: .goingAway, reason: nil)
         isConnected = false
@@ -71,15 +74,31 @@ final class RobotClient: NSObject {
     private func receiveNextMessage() {
         wsTask?.receive { [weak self] result in
             guard let self else { return }
-            if case .success(let msg) = result,
-               case .string(let text) = msg,
-               let data = text.data(using: .utf8),
-               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
-                Task { @MainActor in
-                    self.handleTelemetry(json)
+            switch result {
+            case .success(let msg):
+                if case .string(let text) = msg,
+                   let data = text.data(using: .utf8),
+                   let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    Task { @MainActor in
+                        self.handleTelemetry(json)
+                    }
+                }
+                self.receiveNextMessage()
+            case .failure:
+                Task { @MainActor [weak self] in
+                    self?.isConnected = false
+                    self?.scheduleWSReconnect()
                 }
             }
-            self.receiveNextMessage()
+        }
+    }
+
+    private func scheduleWSReconnect() {
+        wsReconnectTask?.cancel()
+        wsReconnectTask = Task { [weak self] in
+            try? await Task.sleep(nanoseconds: 2_000_000_000)
+            guard !Task.isCancelled, let self else { return }
+            self.startWebSocket()
         }
     }
 
@@ -102,7 +121,12 @@ final class RobotClient: NSObject {
         send(["type": "mode", "value": value])
     }
 
-    private func send(_ payload: [String: String]) {
+    func sendSpeed(_ value: Double) {
+        speed = value
+        send(["type": "speed", "value": value])
+    }
+
+    private func send(_ payload: [String: Any]) {
         guard let data = try? JSONSerialization.data(withJSONObject: payload),
               let text = String(data: data, encoding: .utf8) else { return }
         wsTask?.send(.string(text)) { _ in }

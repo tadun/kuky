@@ -71,13 +71,35 @@ struct ContentView: View {
     // MARK: - Bottom bar
 
     private var bottomBar: some View {
-        HStack(alignment: .bottom) {
-            captureButtons
-            Spacer()
-            JoystickView { dir in
-                client.sendMove(dir)
+        VStack(alignment: .trailing, spacing: 8) {
+            if client.mode == "manual" {
+                speedSlider
+            }
+            HStack(alignment: .bottom) {
+                captureButtons
+                Spacer()
+                JoystickView { dir in
+                    client.sendMove(dir)
+                }
             }
         }
+    }
+
+    private var speedSlider: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "tortoise.fill")
+                .foregroundStyle(.white.opacity(0.6))
+            Slider(value: Binding(
+                get: { client.speed },
+                set: { client.sendSpeed($0) }
+            ), in: 0.2...1.0, step: 0.1)
+            .tint(.orange)
+            Image(systemName: "hare.fill")
+                .foregroundStyle(.white.opacity(0.6))
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 6)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 10))
     }
 
     private var captureButtons: some View {
@@ -135,8 +157,13 @@ struct StreamView: View {
                     .scaledToFit()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
-                ProgressView()
-                    .tint(.white)
+                VStack(spacing: 12) {
+                    ProgressView()
+                        .tint(.white)
+                    Text("Connecting to robot\u{2026}")
+                        .font(.system(.caption, design: .monospaced))
+                        .foregroundStyle(.white.opacity(0.6))
+                }
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)

@@ -32,3 +32,17 @@ targets:
       PRODUCT_BUNDLE_IDENTIFIER: com.tadun.KukyApp
       SWIFT_VERSION: "5.9"
       IPHONEOS_DEPLOYMENT_TARGET: "17.0"
+
+schemes:
+  KukyApp:
+    build:
+      targets:
+        KukyApp: all
+    run:
+      config: Debug
+    profile:
+      config: Release
+    analyze:
+      config: Debug
+    archive:
+      config: Release
