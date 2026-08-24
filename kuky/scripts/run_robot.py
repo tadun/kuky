@@ -71,7 +71,7 @@ async def main() -> None:
             distance = await loop.run_in_executor(None, robot.read_distance_cm)
 
             if server.mode == "manual":
-                decision = _manual_decision(server.manual_dir)
+                decision = _manual_decision(server.manual_dir, server.manual_speed)
             else:
                 decision = navigator.decide(obstacles, detections)
 
@@ -99,12 +99,12 @@ async def main() -> None:
     log.info("Kuky stopped.")
 
 
-def _manual_decision(direction: str) -> NavDecision:
+def _manual_decision(direction: str, speed: float = 1.0) -> NavDecision:
     match direction:
-        case "forward":  return NavDecision(Action.FORWARD,    "manual", speed=0.6)
-        case "backward": return NavDecision(Action.REVERSE,    "manual", speed=0.6)
-        case "left":     return NavDecision(Action.TURN_LEFT,  "manual", speed=0.5)
-        case "right":    return NavDecision(Action.TURN_RIGHT, "manual", speed=0.5)
+        case "forward":  return NavDecision(Action.FORWARD,    "manual", speed=speed)
+        case "backward": return NavDecision(Action.REVERSE,    "manual", speed=speed)
+        case "left":     return NavDecision(Action.TURN_LEFT,  "manual", speed=speed * 0.8)
+        case "right":    return NavDecision(Action.TURN_RIGHT, "manual", speed=speed * 0.8)
         case _:          return NavDecision(Action.STOP,       "manual", speed=0.0)
 
 

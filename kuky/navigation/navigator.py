@@ -73,6 +73,10 @@ class Navigator:
         left = obstacle_map.left
         right = obstacle_map.right
 
+        # All zones blocked — must reverse before any turning is useful
+        if centre > self._obs_thresh and left > self._obs_thresh and right > self._obs_thresh:
+            return NavDecision(Action.REVERSE, "all zones blocked", speed=0.3)
+
         if centre > self._obs_thresh:
             if left < right:
                 return NavDecision(Action.TURN_LEFT, f"centre blocked ({centre:.2f}), left clearer", speed=0.4)

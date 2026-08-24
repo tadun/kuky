@@ -42,6 +42,7 @@ class RobotServer:
         # Shared control state (read by the robot loop)
         self.mode: str = "auto"          # "manual" | "auto"
         self.manual_dir: str = "stop"    # "forward"|"backward"|"left"|"right"|"stop"
+        self.manual_speed: float = 1.0
 
         # Optional callback invoked on every control message
         self._on_command: Optional[Callable[[str, str], None]] = None
@@ -137,6 +138,7 @@ class RobotServer:
             "type": "state",
             "mode": self.mode,
             "dir": self.manual_dir,
+            "speed": self.manual_speed,
         }))
 
         try:
@@ -157,6 +159,10 @@ class RobotServer:
                     self.mode = data.get("value", "auto")
                     if self._on_command:
                         self._on_command(self.mode, self.manual_dir)
+                elif msg_type == "speed":
+                    raw = data.get("value", 1.0)
+                    if isinstance(raw, (int, float)):
+                        self.manual_speed = float(max(0.0, min(1.0, raw)))
         finally:
             self._ws_clients.discard(ws)
 

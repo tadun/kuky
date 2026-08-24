@@ -24,6 +24,9 @@ MAX_DPS = 300
 # Stop motors when ultrasonic reads closer than this (cm)
 STOP_DISTANCE_CM = 15.0
 
+# Max speed change per execute() call (fraction of MAX_DPS)
+RAMP_STEP = 0.2
+
 
 class BrickPiRobot:
     """
@@ -35,6 +38,8 @@ class BrickPiRobot:
 
     def __init__(self, dry_run: bool = not _BRICKPI_AVAILABLE) -> None:
         self._dry_run = dry_run
+        self._current_left: float = 0.0
+        self._current_right: float = 0.0
         if not dry_run:
             self._bp = brickpi3.BrickPi3()
             self._left = getattr(self._bp, PORT_LEFT)
@@ -63,10 +68,19 @@ class BrickPiRobot:
             case Action.REVERSE:
                 self._set_motors(-speed, -speed)
             case Action.STOP:
-                self._set_motors(0.0, 0.0)
+                self._stop_immediate()
 
     def stop(self) -> None:
-        self._set_motors(0.0, 0.0)
+        self._stop_immediate()
+
+    def _stop_immediate(self) -> None:
+        self._current_left = 0.0
+        self._current_right = 0.0
+        if self._dry_run:
+            print("[motors] STOP (immediate)")
+            return
+        self._bp.set_motor_dps(self._left, 0)
+        self._bp.set_motor_dps(self._right, 0)
 
     def read_distance_cm(self) -> float:
         """Return ultrasonic distance in cm, or 999 on dry-run / read error."""
@@ -78,8 +92,10 @@ class BrickPiRobot:
             return 999.0
 
     def _set_motors(self, left: float, right: float) -> None:
-        left_dps = int(left * MAX_DPS)
-        right_dps = int(right * MAX_DPS)
+        self._current_left = _ramp(self._current_left, left, RAMP_STEP)
+        self._current_right = _ramp(self._current_right, right, RAMP_STEP)
+        left_dps = int(self._current_left * MAX_DPS)
+        right_dps = int(self._current_right * MAX_DPS)
         if self._dry_run:
             print(f"[motors] left={left_dps} dps  right={right_dps} dps")
             return
@@ -91,3 +107,11 @@ class BrickPiRobot:
 
     def __exit__(self, *_) -> None:
         self.stop()
+
+
+def _ramp(current: float, target: float, step: float) -> float:
+    """Advance current toward target by at most step; snap when within step."""
+    delta = target - current
+    if abs(delta) <= step:
+        return target
+    return current + step * (1.0 if delta > 0 else -1.0)
