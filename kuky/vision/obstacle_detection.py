@@ -27,11 +27,13 @@ class ObstacleDetector:
         self,
         canny_low: int = 50,
         canny_high: int = 150,
-        roi_top_fraction: float = 0.4,  # ignore top 40 % (ceiling / sky)
+        roi_top_fraction: float = 0.45,  # ignore top 45 % (ceiling + upper walls)
+        centre_fraction: float = 0.5,    # fraction of width assigned to centre zone
     ) -> None:
         self._canny_low = canny_low
         self._canny_high = canny_high
         self._roi_top = roi_top_fraction
+        self._centre_frac = centre_fraction
 
     def detect(self, frame: np.ndarray) -> ObstacleMap:
         h, w = frame.shape[:2]
@@ -42,10 +44,12 @@ class ObstacleDetector:
         blurred = cv2.GaussianBlur(gray, (5, 5), 0)
         edges = cv2.Canny(blurred, self._canny_low, self._canny_high)
 
-        third = w // 3
-        left_density = edges[:, :third].mean() / 255.0
-        centre_density = edges[:, third : third * 2].mean() / 255.0
-        right_density = edges[:, third * 2 :].mean() / 255.0
+        side = (1.0 - self._centre_frac) / 2
+        left_end = int(w * side)
+        right_start = w - left_end
+        left_density = edges[:, :left_end].mean() / 255.0
+        centre_density = edges[:, left_end:right_start].mean() / 255.0
+        right_density = edges[:, right_start:].mean() / 255.0
 
         return ObstacleMap(
             left=float(left_density),

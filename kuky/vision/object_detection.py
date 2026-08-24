@@ -30,6 +30,8 @@ class Detection:
 RELEVANT_LABELS = {
     "person", "chair", "couch", "dining table", "tv",
     "laptop", "dog", "cat", "bottle", "cup",
+    "backpack", "suitcase", "potted plant", "vase",
+    "bed", "toilet", "clock",
 }
 
 

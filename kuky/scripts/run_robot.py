@@ -8,7 +8,7 @@ import time
 
 import cv2
 
-from kuky.vision.camera import Camera
+from kuky.vision.camera import Camera, MockCamera
 from kuky.vision.obstacle_detection import ObstacleDetector
 from kuky.vision.object_detection import ObjectDetector, draw_detections
 from kuky.navigation.navigator import Navigator, Action, NavDecision
@@ -27,6 +27,7 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--dry-run", action="store_true", help="Print motor commands, don't move")
     p.add_argument("--port", type=int, default=8765, help="Server port")
     p.add_argument("--fps-limit", type=float, default=5.0, help="Max inference FPS")
+    p.add_argument("--mock-camera", action="store_true", help="Use synthetic frames; skips webcam entirely")
     return p.parse_args()
 
 
@@ -51,7 +52,8 @@ async def main() -> None:
 
     await server.start()
 
-    with Camera(device_index=args.camera) as cam, BrickPiRobot(dry_run=args.dry_run) as robot:
+    cam_ctx = MockCamera() if args.mock_camera else Camera(device_index=args.camera)
+    with cam_ctx as cam, BrickPiRobot(dry_run=args.dry_run) as robot:
         log.info("Kuky started — connect at http://kuky.local:%d/stream", args.port)
         last_time = 0.0
 
